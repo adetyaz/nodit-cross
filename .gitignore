@@ -5,6 +5,7 @@ frontend/node_modules/
 .pnp.js
 /nodit-mcp-server
 /docs
+/frontend-two
 
 # Testing
 coverage/
