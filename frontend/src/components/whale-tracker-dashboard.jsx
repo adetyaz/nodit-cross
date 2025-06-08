@@ -30,9 +30,8 @@ const WhaleTrackerDashboard = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [error, setError] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
-  const [chatId, setChatId] = useState("");
 
-  const apiBaseUrl = "http://localhost:4000";
+  const apiBaseUrl = "https://nodit-cross.onrender.com";
 
   const notify = () => toast("Coming soon!");
 
