@@ -4,7 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "build": "echo 'No build step required.'"
   },
   "dependencies": {
     "axios": "^1.9.0",
