@@ -27,6 +27,8 @@ class WhaleMonitor {
     this.trackedTokens = new Map();
     this.apiKey = process.env.NODIT_API_KEY || "nodit-demo";
     this.callCount = 0;
+    this.telegramBot = config.telegramBot || null;
+    this.subscribedChatIds = config.subscribedChatIds || new Set();
 
     this.client = axios.create({
       baseURL: "https://web3.nodit.io/v1",
@@ -223,6 +225,21 @@ class WhaleMonitor {
     return symbols[protocol] || "ETH";
   }
 
+  async sendTelegramAlert(message) {
+    if (!this.telegramBot || this.subscribedChatIds.size === 0) {
+      console.log("⚠️ Telegram bot not configured or no subscribers:", message);
+      return;
+    }
+    try {
+      for (const chatId of this.subscribedChatIds) {
+        await this.telegramBot.sendMessage(chatId, message);
+        console.log(`✅ Sent Telegram alert to ${chatId}: ${message}`);
+      }
+    } catch (error) {
+      console.error(`❌ Telegram alert error: ${error.message}`);
+    }
+  }
+
   async filterWhaleTransfers(transfers, protocol, network) {
     const whaleTransfers = [];
     const uniqueTokens = new Set(
@@ -241,13 +258,15 @@ class WhaleMonitor {
     for (const transfer of transfers) {
       try {
         let rawValue = transfer.value;
+        // Fix BigInt for scientific notation
         if (
           typeof rawValue === "number" ||
           (typeof rawValue === "string" && rawValue.includes("e"))
         ) {
-          rawValue = Number(rawValue).toFixed(0);
+          rawValue = BigInt(Math.floor(Number(rawValue))).toString();
         }
-        if (!rawValue || isNaN(Number(rawValue))) {
+        // Validate rawValue
+        if (!rawValue || !/^\d+$/.test(rawValue)) {
           console.warn(
             `⚠️ Invalid transfer value for ${transfer.hash}: ${rawValue}`
           );
@@ -267,11 +286,17 @@ class WhaleMonitor {
           valueInWei = BigInt(rawValue);
         }
 
-        if (priceInUSD === 0) continue;
-
         const valueInEther = Number(valueInWei) / 1e18;
         const usdValue = valueInEther * priceInUSD;
         const priceImpact = Math.random() * 1;
+
+        // Skip if usdValue is 0
+        if (usdValue === 0) {
+          console.log(
+            `⚠️ Skipping transfer ${transfer.hash} with usdValue 0 on ${protocol}`
+          );
+          continue;
+        }
 
         if (usdValue >= Number(thresholdValue) / 1e18) {
           whaleTransfers.push({
@@ -316,24 +341,29 @@ class WhaleMonitor {
       newMovements.push(...whaleTransfers);
 
       for (const transfer of whaleTransfers) {
-        const alert = {
-          id: `alert-${transfer.id}`,
-          message: `Whale transfer: ${transfer.usdValue.toFixed(2)} USD of ${
-            transfer.tokenSymbol
-          } on ${chain}`,
-          severity:
-            transfer.usdValue > 1000000
-              ? "high"
-              : transfer.usdValue > 500000
-              ? "medium"
-              : "low",
-          timestamp: transfer.timestamp,
-          chain,
-        };
-        this.alerts = [alert, ...this.alerts].slice(
-          0,
-          this.config.maxStoredAlerts
-        );
+        if (transfer.usdValue > 0) {
+          const alertMessage = `Whale transfer: ${transfer.usdValue.toFixed(
+            2
+          )} USD of ${transfer.tokenSymbol} on ${chain}`;
+          const alert = {
+            id: `alert-${transfer.id}`,
+            message: alertMessage,
+            severity:
+              transfer.usdValue > 1000000
+                ? "high"
+                : transfer.usdValue > 500000
+                ? "medium"
+                : "low",
+            timestamp: transfer.timestamp,
+            chain,
+          };
+          this.alerts = [alert, ...this.alerts].slice(
+            0,
+            this.config.maxStoredAlerts
+          );
+          // Send to Telegram
+          await this.sendTelegramAlert(alertMessage);
+        }
       }
     }
 

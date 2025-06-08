@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
   Bell,
   Search,
   Filter,
@@ -10,10 +8,10 @@ import {
   Activity,
   Wallet,
   DollarSign,
-  BarChart3,
   Eye,
-  Settings,
 } from "lucide-react";
+
+import toast, { Toaster } from "react-hot-toast";
 
 const WhaleTrackerDashboard = () => {
   const [selectedChains, setSelectedChains] = useState([
@@ -23,11 +21,10 @@ const WhaleTrackerDashboard = () => {
     "base",
     "optimism",
   ]);
-  const [whaleThreshold, setWhaleThreshold] = useState("100000"); // USD threshold
+  const [whaleThreshold, setWhaleThreshold] = useState("100000");
   const [timeRange, setTimeRange] = useState("24h");
   const [alerts, setAlerts] = useState([]);
   const [whaleTransactions, setWhaleTransactions] = useState([]);
-  const [trackedWallets, setTrackedWallets] = useState([]);
   const [priceImpactData, setPriceImpactData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -35,18 +32,18 @@ const WhaleTrackerDashboard = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [chatId, setChatId] = useState("");
 
-  const apiBaseUrl = "http://localhost:4000"; // Hardcoded for local dev
+  const apiBaseUrl = "http://localhost:4000";
 
-  // Supported chains (excluded Avalanche)
+  const notify = () => toast("Coming soon!");
+
   const supportedChains = {
     ethereum: { name: "Ethereum", color: "bg-blue-500", symbol: "ETH" },
     polygon: { name: "Polygon", color: "bg-purple-500", symbol: "MATIC" },
     arbitrum: { name: "Arbitrum", color: "bg-cyan-500", symbol: "ARB" },
-    base: { name: "Base", color: "bg-indigo-500", symbol: "BASE" },
+    base: { name: "Base", color: "bg-indigo-500", symbol: "ETH" },
     optimism: { name: "Optimism", color: "bg-red-500", symbol: "OP" },
   };
 
-  // Fetch whale data
   const fetchWhaleData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -77,7 +74,6 @@ const WhaleTrackerDashboard = () => {
     }
   }, []);
 
-  // Fetch alerts
   const fetchAlerts = useCallback(async () => {
     try {
       const res = await fetch(`${apiBaseUrl}/api/alerts`);
@@ -90,58 +86,13 @@ const WhaleTrackerDashboard = () => {
     }
   }, []);
 
-  // Fetch wallet data
-  const fetchWalletData = useCallback(async () => {
-    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      alert("Please enter a valid wallet address");
-      return;
-    }
-    try {
-      const res = await fetch(
-        `${apiBaseUrl}/api/wallet?address=${walletAddress}&chains=${selectedChains.join(
-          ","
-        )}`
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setTrackedWallets((prev) => [...prev, data]);
-      setWalletAddress("");
-    } catch (err) {
-      console.error("Error fetching wallet data:", err);
-      alert("Failed to fetch wallet data.");
-    }
-  }, [walletAddress, selectedChains]);
-
-  // Subscribe to Telegram
-  const handleSubscribe = useCallback(async () => {
-    if (!chatId) {
-      alert("Please enter a Telegram chat ID");
-      return;
-    }
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      alert(data.message);
-      setChatId("");
-    } catch (err) {
-      console.error("Subscription error:", err);
-      alert("Failed to subscribe to alerts.");
-    }
-  }, [chatId]);
-
-  // Update configuration
   const updateConfig = useCallback(async () => {
     try {
       const payload = {
         whaleThreshold: String(whaleThreshold),
         chains: selectedChains,
         networks: selectedChains.map(() => "mainnet"),
-        updateInterval: 30000, // Match frontend interval
+        updateInterval: 30000,
       };
       const res = await fetch(`${apiBaseUrl}/api/config`, {
         method: "POST",
@@ -157,9 +108,7 @@ const WhaleTrackerDashboard = () => {
     }
   }, [whaleThreshold, selectedChains]);
 
-  // Fetch price impact data (stubbed)
   const fetchPriceImpactData = useCallback(async () => {
-    // Placeholder: Backend doesn’t support this yet
     setPriceImpactData([
       { chain: "ethereum", token: "ETH", impact: 0.5, timestamp: Date.now() },
       {
@@ -186,7 +135,7 @@ const WhaleTrackerDashboard = () => {
   }, [fetchWhaleData, fetchAlerts, fetchPriceImpactData, autoRefresh]);
 
   useEffect(() => {
-    updateConfig(); // Sync config with backend on changes
+    updateConfig();
   }, [whaleThreshold, selectedChains, updateConfig]);
 
   const formatTimeAgo = (timestamp) => {
@@ -215,7 +164,6 @@ const WhaleTrackerDashboard = () => {
   return (
     <div className='min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white'>
       <div className='container mx-auto px-4 py-6'>
-        {/* Header */}
         <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8'>
           <div>
             <h1 className='text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
@@ -250,7 +198,6 @@ const WhaleTrackerDashboard = () => {
           </div>
         </div>
 
-        {/* Controls */}
         <div className='grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8'>
           <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl p-4'>
             <label className='block text-sm font-medium mb-2'>
@@ -299,7 +246,6 @@ const WhaleTrackerDashboard = () => {
           </div>
         </div>
 
-        {/* Wallet Tracking and Telegram Subscription */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8'>
           <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl p-4'>
             <label className='block text-sm font-medium mb-2'>
@@ -311,41 +257,44 @@ const WhaleTrackerDashboard = () => {
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
                 placeholder='Wallet Address (e.g., 0x123...)'
-                className='flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white'
+                disabled
+                className='flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-500 cursor-not-allowed'
               />
               <button
-                onClick={fetchWalletData}
-                disabled={loading}
-                className='bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50'
+                onClick={notify}
+                className='bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors'
               >
                 Track
               </button>
+              <Toaster />
             </div>
           </div>
           <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl p-4'>
             <label className='block text-sm font-medium mb-2'>
               Telegram Alerts
             </label>
-            <div className='flex items-center gap-2'>
-              <input
-                type='text'
-                value={chatId}
-                onChange={(e) => setChatId(e.target.value)}
-                placeholder='Telegram Chat ID'
-                className='flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white'
-              />
-              <button
-                onClick={handleSubscribe}
-                disabled={loading}
-                className='bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50'
+            <p className='text-sm text-gray-300 mb-4'>
+              To receive whale alerts, message{" "}
+              <a
+                href='https://t.me/WhaleVaultBot'
+                target='_blank'
+                className='text-blue-400 hover:underline'
               >
-                Subscribe
-              </button>
-            </div>
+                @WhaleVaultBot
+              </a>{" "}
+              on Telegram and send <code>/start</code>.
+            </p>
+            <a
+              href='https://t.me/WhaleVaultBot'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='inline-block bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors'
+            >
+              Open Telegram
+            </a>
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
           <div className='bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/20'>
             <div className='flex items-center justify-between mb-2'>
@@ -376,9 +325,7 @@ const WhaleTrackerDashboard = () => {
           <div className='bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20'>
             <div className='flex items-center justify-between mb-2'>
               <Wallet className='w-8 h-8 text-purple-400' />
-              <span className='text-2xl font-bold text-purple-400'>
-                {trackedWallets.length}
-              </span>
+              <span className='text-2xl font-bold text-purple-400'>0</span>
             </div>
             <h3 className='text-lg font-semibold'>Tracked Wallets</h3>
             <p className='text-gray-400 text-sm'>Active monitoring</p>
@@ -396,7 +343,6 @@ const WhaleTrackerDashboard = () => {
         </div>
 
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-          {/* Recent Whale Transactions */}
           <div className='lg:col-span-2'>
             <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50'>
               <div className='flex items-center justify-between mb-6'>
@@ -464,9 +410,7 @@ const WhaleTrackerDashboard = () => {
             </div>
           </div>
 
-          {/* Right Sidebar */}
           <div className='space-y-6'>
-            {/* Active Alerts */}
             <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50'>
               <div className='flex items-center justify-between mb-4'>
                 <h2 className='text-xl font-bold'>Active Alerts</h2>
@@ -510,56 +454,16 @@ const WhaleTrackerDashboard = () => {
               )}
             </div>
 
-            {/* Tracked Wallets */}
             <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50'>
               <div className='flex items-center justify-between mb-4'>
                 <h2 className='text-xl font-bold'>Tracked Wallets</h2>
                 <Eye className='w-5 h-5 text-purple-400' />
               </div>
-              {trackedWallets.length === 0 ? (
-                <p className='text-gray-400'>No wallets tracked.</p>
-              ) : (
-                <div className='space-y-3'>
-                  {trackedWallets.map((wallet, index) => (
-                    <div key={index} className='bg-gray-700/50 rounded-lg p-3'>
-                      <div className='flex items-center justify-between mb-2'>
-                        <span className='font-medium'>{wallet.label}</span>
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            wallet.alertsEnabled
-                              ? "bg-green-400"
-                              : "bg-gray-400"
-                          }`}
-                        ></div>
-                      </div>
-                      <p className='text-sm text-gray-400 truncate'>
-                        {wallet.address}
-                      </p>
-                      <div className='flex justify-between items-center mt-2'>
-                        <span className='text-sm font-semibold text-green-400'>
-                          {formatValue(wallet.totalValue)}
-                        </span>
-                        <span className='text-xs text-gray-500'>
-                          {formatTimeAgo(wallet.lastActivity)}
-                        </span>
-                      </div>
-                      <div className='flex space-x-1 mt-2'>
-                        {wallet.chains.map((chain) => (
-                          <div
-                            key={chain}
-                            className={`w-2 h-2 rounded-full ${supportedChains[chain]?.color}`}
-                          ></div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className='text-gray-400'>No wallets tracked.</p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div className='mt-8 text-center text-gray-400 text-sm'>
           <p>
             Data powered by Nodit Blockchain Context API • Real-time cross-chain

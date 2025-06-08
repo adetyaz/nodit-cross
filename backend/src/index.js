@@ -1,12 +1,36 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import TelegramBot from "node-telegram-bot-api";
 import WhaleMonitor from "./whaleMonitor.js";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 4000;
+
+const botToken = process.env.TELEGRAM_BOT_TOKEN;
+let bot = null;
+const subscribedChatIds = new Set();
+
+if (botToken) {
+  bot = new TelegramBot(botToken, { polling: true });
+  console.log("🐬 Telegram Bot initialized");
+
+  // Handle /start command
+  bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id.toString();
+    if (!subscribedChatIds.has(chatId)) {
+      subscribedChatIds.add(chatId);
+      bot.sendMessage(chatId, "You’re subscribed to whale alerts! 🐳");
+      console.log(`✅ Subscribed chat ID: ${chatId}`);
+    } else {
+      bot.sendMessage(chatId, "You’re already subscribed! 🐳");
+    }
+  });
+} else {
+  console.warn("⚠️ No TELEGRAM_BOT_TOKEN in .env. Telegram alerts disabled.");
+}
 
 app.use(cors());
 app.use(express.json());
@@ -17,6 +41,8 @@ let whaleMonitor = new WhaleMonitor({
   networks: ["mainnet", "mainnet", "mainnet", "mainnet", "mainnet"],
   updateInterval: 30000,
   useMockData: process.env.USE_MOCK_DATA === "true",
+  telegramBot: bot,
+  subscribedChatIds,
 });
 
 app.get("/api/whales", async (req, res) => {
@@ -57,16 +83,7 @@ app.get("/api/wallet", async (req, res) => {
 });
 
 app.post("/api/subscribe", async (req, res) => {
-  const { chatId } = req.body;
-  if (!chatId || typeof chatId !== "string") {
-    return res.status(400).json({ error: "Valid chat ID required" });
-  }
-  try {
-    res.json({ message: `Subscribed with chat ID ${chatId}` });
-  } catch (error) {
-    console.error("Error subscribing:", error);
-    res.status(500).json({ error: "Failed to subscribe" });
-  }
+  res.status(410).json({ error: "Use /start in Telegram bot instead" });
 });
 
 app.post("/api/config", async (req, res) => {
@@ -86,11 +103,9 @@ app.post("/api/config", async (req, res) => {
   }
   const validChains = ["ethereum", "polygon", "arbitrum", "base", "optimism"];
   if (chains.some((c) => !validChains.includes(c))) {
-    return res
-      .status(400)
-      .json({
-        error: `Invalid chain(s). Supported: ${validChains.join(", ")}`,
-      });
+    return res.status(400).json({
+      error: `Invalid chain(s). Supported: ${validChains.join(", ")}`,
+    });
   }
   try {
     whaleMonitor.updateConfig({
@@ -106,6 +121,7 @@ app.post("/api/config", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Whale Tracker on port ${port}`);
+const serverPort = port || process.env.PORT;
+app.listen(serverPort, () => {
+  console.log(`Whale Tracker on port ${serverPort}`);
 });
