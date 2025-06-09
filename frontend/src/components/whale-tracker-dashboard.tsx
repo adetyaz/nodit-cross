@@ -166,7 +166,7 @@ const WhaleTrackerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white relative">
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
           <div>
@@ -201,6 +201,12 @@ const WhaleTrackerDashboard = () => {
             </button>
           </div>
         </div>
+
+        {loading && (
+          <div className="absolute rounded-lg bg-blue-400/60 top-10 left-1/2 transform -translate-x-1/2 p-4 text-center">
+            <p className="text-lg font-semibold">Loading whale data...</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4">
