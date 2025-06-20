@@ -86,6 +86,126 @@ app.post("/api/subscribe", async (req, res) => {
   res.status(410).json({ error: "Use /start in Telegram bot instead" });
 });
 
+// Guardian Whale API endpoints
+app.get("/api/guardian-whales", async (req, res) => {
+  try {
+    const guardianWhales = await whaleMonitor.getGuardianWhales();
+    res.json(guardianWhales);
+  } catch (error) {
+    console.error("Error fetching guardian whales:", error);
+    res.status(500).json({ error: "Failed to fetch guardian whales" });
+  }
+});
+
+app.get("/api/whale-behavior/:address", async (req, res) => {
+  const { address } = req.params;
+  const { timeframe = "24h" } = req.query;
+  try {
+    const behaviorAnalysis = await whaleMonitor.getWhaleBehaviorAnalysis(
+      address,
+      timeframe
+    );
+    res.json(behaviorAnalysis);
+  } catch (error) {
+    console.error("Error fetching whale behavior:", error);
+    res.status(500).json({ error: "Failed to fetch whale behavior analysis" });
+  }
+});
+
+app.get("/api/ai-insights/:address", async (req, res) => {
+  const { address } = req.params;
+  try {
+    const aiInsights = await whaleMonitor.getAIInsights(address);
+    res.json(aiInsights);
+  } catch (error) {
+    console.error("Error fetching AI insights:", error);
+    res.status(500).json({ error: "Failed to fetch AI insights" });
+  }
+});
+
+app.get("/api/whale-strategies", async (req, res) => {
+  try {
+    const strategies = await whaleMonitor.getGuardianWhaleStrategies();
+    res.json(strategies);
+  } catch (error) {
+    console.error("Error fetching whale strategies:", error);
+    res.status(500).json({ error: "Failed to fetch whale strategies" });
+  }
+});
+
+app.get("/api/whale-portfolio/:address", async (req, res) => {
+  const { address } = req.params;
+  try {
+    const portfolio = await whaleMonitor.getWhalePortfolioAnalysis(address);
+    res.json(portfolio);
+  } catch (error) {
+    console.error("Error fetching whale portfolio:", error);
+    res.status(500).json({ error: "Failed to fetch whale portfolio analysis" });
+  }
+});
+
+app.get("/api/whale-influence-network", async (req, res) => {
+  try {
+    const network = await whaleMonitor.getWhaleInfluenceNetwork();
+    res.json(network);
+  } catch (error) {
+    console.error("Error fetching whale influence network:", error);
+    res.status(500).json({ error: "Failed to fetch whale influence network" });
+  }
+});
+
+app.get("/api/market-impact", async (req, res) => {
+  const { timeframe = "24h" } = req.query;
+  try {
+    const marketImpact = await whaleMonitor.getMarketImpactAnalysis(timeframe);
+    res.json(marketImpact);
+  } catch (error) {
+    console.error("Error fetching market impact:", error);
+    res.status(500).json({ error: "Failed to fetch market impact analysis" });
+  }
+});
+
+app.get("/api/guardian-leaderboard", async (req, res) => {
+  const { metric = "guardian_score", limit = 20 } = req.query;
+  try {
+    const leaderboard = await whaleMonitor.getGuardianWhaleLeaderboard(
+      metric,
+      parseInt(limit)
+    );
+    res.json(leaderboard);
+  } catch (error) {
+    console.error("Error fetching guardian leaderboard:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch guardian whale leaderboard" });
+  }
+});
+
+// Real-time event streaming endpoint
+app.get("/api/real-time-events", async (req, res) => {
+  try {
+    const events = await whaleMonitor.getRecentEvents();
+    res.json(events);
+  } catch (error) {
+    console.error("Error fetching real-time events:", error);
+    res.status(500).json({ error: "Failed to fetch real-time events" });
+  }
+});
+
+// Webhook endpoint for Nodit streams
+app.post("/webhooks/nodit/:eventType", async (req, res) => {
+  const { eventType } = req.params;
+  const eventData = req.body;
+
+  try {
+    await whaleMonitor.handleWebhookEvent(eventType, eventData);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error handling webhook:", error);
+    res.status(500).json({ error: "Failed to process webhook event" });
+  }
+});
+
 app.post("/api/config", async (req, res) => {
   const { whaleThreshold, chains, networks, updateInterval } = req.body;
   if (
