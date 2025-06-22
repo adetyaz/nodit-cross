@@ -50,7 +50,7 @@ export const LeaderboardTab = ({ leaderboard, onWhaleSelect }: Props) => {
                 const badge = getGuardianScoreBadge(whale.guardianScore)
                 return (
                   <tr
-                    key={whale.address}
+                    key={whale.address + '-' + index}
                     className="border-b border-gray-800 hover:bg-gray-700/30"
                   >
                     <td className="py-3">

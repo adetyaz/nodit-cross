@@ -30,7 +30,9 @@ if (process.env.ENABLE_TELEGRAM_BOT === "true" && botToken) {
     }
   });
 } else if (botToken) {
-  console.warn("⚠️ Telegram bot not started. Set ENABLE_TELEGRAM_BOT=true to enable polling.");
+  console.warn(
+    "⚠️ Telegram bot not started. Set ENABLE_TELEGRAM_BOT=true to enable polling."
+  );
 } else {
   console.warn("⚠️ No TELEGRAM_BOT_TOKEN in .env. Telegram alerts disabled.");
 }
@@ -43,7 +45,6 @@ let whaleMonitor = new WhaleMonitor({
   chains: ["ethereum", "polygon", "arbitrum", "base", "optimism"],
   networks: ["mainnet", "mainnet", "mainnet", "mainnet", "mainnet"],
   updateInterval: 30000,
-  useMockData: process.env.USE_MOCK_DATA === "true",
   telegramBot: bot,
   subscribedChatIds,
 });

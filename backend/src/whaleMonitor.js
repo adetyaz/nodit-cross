@@ -20,7 +20,6 @@ class WhaleMonitor {
       ],
       updateInterval: config.updateInterval || 30000,
       maxStoredAlerts: config.maxStoredAlerts || 100,
-      useMockData: config.useMockData || false,
       // Guardian Whale Protocol settings
       guardianWhaleMinTransactions: config.guardianWhaleMinTransactions || 100,
       guardianWhaleMinVolume:
@@ -67,10 +66,6 @@ class WhaleMonitor {
       timeout: 10000,
     });
 
-    if (this.config.useMockData) {
-      this.initializeMockData();
-      console.log("⚠️ Using mock data");
-    }
     console.log("🐋 Initialized:", {
       chains: this.config.chains,
       interval: this.config.updateInterval,
@@ -81,57 +76,6 @@ class WhaleMonitor {
 
     // Setup Nodit webhooks for real-time data
     this.setupNoditWebhooks();
-  }
-
-  initializeMockData() {
-    const mockMovements = [
-      {
-        id: "mock1",
-        hash: "0xmock123",
-        from: "0xmockfrom",
-        to: "0xmockto",
-        value: 1000000000000,
-        tokenSymbol: "USDT",
-        tokenDecimals: 6,
-        contractAddress: "0xmockcontract",
-        timestamp: Date.now(),
-        tokenName: "Tether USD",
-        tokenType: "ERC20",
-        type: "token_transfer",
-        usdValue: 1000000,
-        tokenPrice: 1,
-        valueInWei: "1000000000000",
-        chain: "polygon",
-        priceImpact: 0.5,
-      },
-      {
-        id: "mock2",
-        hash: "0xmock456",
-        from: "0xmockfrom2",
-        to: "0xmockto2",
-        value: 50000000000000000000,
-        tokenSymbol: "ETH",
-        tokenDecimals: 18,
-        contractAddress: null,
-        timestamp: Date.now() - 60000,
-        tokenName: "Ether",
-        tokenType: "native",
-        type: "native_transfer",
-        usdValue: 100000,
-        tokenPrice: 2000,
-        valueInWei: "50000000000000000000",
-        chain: "ethereum",
-        priceImpact: 0.3,
-      },
-    ];
-    this.recentWhaleMovements = mockMovements;
-    this.alerts = mockMovements.map((m) => ({
-      id: `alert-${m.id}`,
-      message: `Whale transfer: ${m.value} ${m.tokenSymbol} on ${m.chain}`,
-      severity: "high",
-      timestamp: m.timestamp,
-      chain: m.chain,
-    }));
   }
 
   logRequest(method, url, data) {
@@ -187,7 +131,6 @@ class WhaleMonitor {
   }
 
   async getTokenTransfers(protocol, network, fromTimestamp, toTimestamp) {
-    if (this.config.useMockData) return this.recentWhaleMovements;
     try {
       const response = await this.makeRequest(
         "POST",
@@ -228,14 +171,6 @@ class WhaleMonitor {
   }
 
   async getTokenPrices(tokenAddresses, protocol, network) {
-    if (this.config.useMockData) {
-      return new Map(
-        tokenAddresses.map((addr) => [
-          addr.toLowerCase(),
-          Math.random() * 2000 + 100,
-        ])
-      );
-    }
     console.warn(
       `⚠️ getTokenPrices not implemented for ${protocol}. Using mock prices.`
     );
@@ -352,7 +287,6 @@ class WhaleMonitor {
   }
 
   async getRecentWhaleMovements() {
-    if (this.config.useMockData) return this.recentWhaleMovements;
     const now = new Date();
     const fromTimestamp = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const newMovements = [];
@@ -374,18 +308,14 @@ class WhaleMonitor {
       newMovements.push(...whaleTransfers);
 
       for (const transfer of whaleTransfers) {
-        if (this.config.useMockData) {
-          console.log("📦 Mock transfer:", transfer);
-        } else {
-          // Enrich with price data
-          const tokenPrices = await this.getTokenPrices(
-            [transfer.contractAddress],
-            chain,
-            network
-          );
-          const priceInUSD = tokenPrices.get(transfer.contractAddress) || 0;
-          transfer.usdValue = (transfer.value / 1e18) * priceInUSD;
-        }
+        // Enrich with price data
+        const tokenPrices = await this.getTokenPrices(
+          [transfer.contractAddress],
+          chain,
+          network
+        );
+        const priceInUSD = tokenPrices.get(transfer.contractAddress) || 0;
+        transfer.usdValue = (transfer.value / 1e18) * priceInUSD;
       }
     }
 
@@ -1892,90 +1822,7 @@ class WhaleMonitor {
     console.log("🌊 Starting real-time data streams...");
 
     // Simulate real-time whale activity
-    if (this.config.useMockData) {
-      this.startMockRealTimeStream();
-    } else {
-      // In production, this would connect to actual Nodit streams
-      this.connectToNoditStreams();
-    }
-  }
-
-  startMockRealTimeStream() {
-    console.log("🎭 Starting mock real-time stream...");
-
-    const generateMockEvent = () => {
-      const eventTypes = [
-        "large_transfer",
-        "liquidity_movement",
-        "nft_trade",
-        "defi_interaction",
-      ];
-      const eventType =
-        eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-      const mockEvent = this.generateMockRealTimeEvent(eventType);
-      if (mockEvent) {
-        this.queueEvent(mockEvent);
-      }
-
-      // Schedule next mock event (every 30-60 seconds)
-      const nextEventDelay = 30000 + Math.random() * 30000;
-      setTimeout(generateMockEvent, nextEventDelay);
-    };
-
-    // Start generating mock events
-    setTimeout(generateMockEvent, 5000);
-  }
-
-  generateMockRealTimeEvent(eventType) {
-    const timestamp = Date.now();
-    const trackedAddresses = Array.from(this.trackedWallets.keys());
-
-    if (trackedAddresses.length === 0) return null;
-
-    const whaleAddress =
-      trackedAddresses[Math.floor(Math.random() * trackedAddresses.length)];
-
-    switch (eventType) {
-      case "large_transfer":
-        return {
-          type: "whale_large_transfer",
-          data: {
-            transfer: {
-              from: whaleAddress,
-              to: `0x${Math.random().toString(16).slice(2, 42)}`,
-              value: (Math.random() * 5000000 + 1000000).toString(),
-              token: "USDC",
-            },
-            usdValue: Math.random() * 5000000 + 1000000,
-            whaleInvolved: whaleAddress,
-            direction: "outgoing",
-            significance: "high",
-            triggerAnalysis: true,
-          },
-          timestamp,
-        };
-
-      case "liquidity_movement":
-        return {
-          type: "whale_liquidity_movement",
-          data: {
-            userAddress: whaleAddress,
-            poolAddress: `0x${Math.random().toString(16).slice(2, 42)}`,
-            liquidityChange: {
-              amount: Math.random() * 1000000 + 100000,
-              usd_value: Math.random() * 1000000 + 100000,
-              type: Math.random() > 0.5 ? "add" : "remove",
-            },
-            significance: "medium",
-            triggerAnalysis: true,
-          },
-          timestamp,
-        };
-
-      default:
-        return null;
-    }
+    this.connectToNoditStreams();
   }
 
   async connectToNoditStreams() {
@@ -2115,7 +1962,7 @@ class WhaleMonitor {
     return Array.from(this.guardianWhaleData.strategies.values());
   }
 
-  async getGuardianWhaleLeaderboard(metric = 'guardianScore', limit = 20) {
+  async getGuardianWhaleLeaderboard(metric = "guardianScore", limit = 20) {
     // Return top guardian whales sorted by metric
     const whales = Array.from(this.guardianWhales.values());
     whales.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
