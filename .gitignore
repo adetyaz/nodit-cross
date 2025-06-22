@@ -67,3 +67,7 @@ Thumbs.db
 
 # misc
 *.txt
+
+# Project planning and roadmap docs
+WAVE-ROADMAP.md
+dev-notes.md

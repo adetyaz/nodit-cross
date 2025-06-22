@@ -2104,3 +2104,5 @@ class WhaleMonitor {
     }
   }
 }
+
+export default WhaleMonitor;
