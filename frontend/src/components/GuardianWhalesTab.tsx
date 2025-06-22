@@ -44,11 +44,13 @@ export const GuardianWhalesTab = ({
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {guardianWhales.map((whale) => {
+          {Array.from(new Set(guardianWhales.map(w => w.address))).map((address, idx) => {
+            const whale = guardianWhales.find(w => w.address === address)
+            if (!whale) return null
             const badge = getGuardianScoreBadge(whale.guardianScore)
             return (
               <div
-                key={whale.address}
+                key={whale.address + '-' + idx}
                 className="bg-gray-700/50 rounded-lg p-4 hover:bg-gray-700 transition-all cursor-pointer border-l-4 border-blue-400"
                 onClick={() => onWhaleSelect(whale)}
               >

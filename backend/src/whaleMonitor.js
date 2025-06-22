@@ -2103,6 +2103,24 @@ class WhaleMonitor {
       return null;
     }
   }
+
+  // --- Guardian Whale API Methods ---
+  async getGuardianWhales() {
+    // Return all guardian whale profiles as an array
+    return Array.from(this.guardianWhales.values());
+  }
+
+  async getGuardianWhaleStrategies() {
+    // Return all strategies for guardian whales
+    return Array.from(this.guardianWhaleData.strategies.values());
+  }
+
+  async getGuardianWhaleLeaderboard(metric = 'guardianScore', limit = 20) {
+    // Return top guardian whales sorted by metric
+    const whales = Array.from(this.guardianWhales.values());
+    whales.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+    return whales.slice(0, limit);
+  }
 }
 
 export default WhaleMonitor;

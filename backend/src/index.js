@@ -13,7 +13,8 @@ const botToken = process.env.TELEGRAM_BOT_TOKEN;
 let bot = null;
 const subscribedChatIds = new Set();
 
-if (botToken) {
+// Only start the bot if ENABLE_TELEGRAM_BOT is set to 'true'
+if (process.env.ENABLE_TELEGRAM_BOT === "true" && botToken) {
   bot = new TelegramBot(botToken, { polling: true });
   console.log("🐬 Telegram Bot initialized");
 
@@ -28,6 +29,8 @@ if (botToken) {
       bot.sendMessage(chatId, "You’re already subscribed! 🐳");
     }
   });
+} else if (botToken) {
+  console.warn("⚠️ Telegram bot not started. Set ENABLE_TELEGRAM_BOT=true to enable polling.");
 } else {
   console.warn("⚠️ No TELEGRAM_BOT_TOKEN in .env. Telegram alerts disabled.");
 }
