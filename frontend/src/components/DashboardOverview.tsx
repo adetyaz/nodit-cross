@@ -218,35 +218,32 @@ export const DashboardOverview = ({
               Top Guardian Whales
             </h3>
             <div className="space-y-3 max-h-64 overflow-y-auto">
-              {guardianWhales.slice(0, 5).map((whale) => {
-                const badge = getGuardianScoreBadge(whale.guardianScore)
-                return (
-                  <div
-                    key={whale.address}
-                    className="p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700"
-                    onClick={() => onWhaleSelect(whale)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-sm text-blue-400">
-                        {whale.address.slice(0, 6)}...{whale.address.slice(-4)}
-                      </span>
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${badge.color} text-white`}
-                      >
-                        {badge.text}
-                      </span>
+              {Array.isArray(guardianWhales) && guardianWhales.length > 0 ? (
+                guardianWhales.slice(0, 5).map((whale) => {
+                  const badge = getGuardianScoreBadge(whale.guardianScore)
+                  return (
+                    <div
+                      key={whale.address}
+                      className="p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700"
+                      onClick={() => onWhaleSelect(whale)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-sm text-blue-400">
+                          {whale.address.slice(0, 6)}...
+                          {whale.address.slice(-4)}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${badge.color} text-white`}
+                        >
+                          {badge.text}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">
-                        Score: {whale.guardianScore}
-                      </span>
-                      <span className="text-green-400">
-                        ${(whale.totalVolume / 1000000).toFixed(1)}M
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              ) : (
+                <div className="text-gray-400">No guardian whales found.</div>
+              )}
             </div>
           </div>
 

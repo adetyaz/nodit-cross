@@ -51,3 +51,58 @@ Instructions for backend and frontend setup will be provided in their respective
 - [x] Backend: Whale monitoring, alerting, token impact analysis
 - [x] Frontend: Real-time dashboard, alert management
 - [ ] Multi-Chain Inheritance Vault integration
+
+## Nodit API Usage Documentation
+
+### Nodit APIs Used in the Project
+
+| API Endpoint                                               | Method | Purpose                                   | TTL Cache          | Called By                     |
+| ---------------------------------------------------------- | ------ | ----------------------------------------- | ------------------ | ----------------------------- |
+| `/{protocol}/{network}/token/getTokenTransfersWithinRange` | POST   | Fetch token transfers within a time range | 30 min (1800000ms) | `getTokenTransfers()`         |
+| `/{protocol}/{network}/token/getTokenPricesByContracts`    | POST   | Get token prices by contract addresses    | 60 min (3600000ms) | `getTokenPrices()`            |
+| `/ethereum/mainnet/account/getTokenBalancesByAccount`      | POST   | Get token balances for an account         | 30 min (1800000ms) | `getWhalePortfolioAnalysis()` |
+
+### WhaleMonitor Methods Using Nodit APIs
+
+| Method                        | API Endpoints Used                                         | Called By                                               |
+| ----------------------------- | ---------------------------------------------------------- | ------------------------------------------------------- |
+| `getTokenTransfers()`         | `/{protocol}/{network}/token/getTokenTransfersWithinRange` | `getRecentWhaleMovements()`, `analyzeWhaleBehavior()`   |
+| `getTokenPrices()`            | `/{protocol}/{network}/token/getTokenPricesByContracts`    | `filterWhaleTransfers()`, `getWhalePortfolioAnalysis()` |
+| `getRecentWhaleMovements()`   | Calls `getTokenTransfers()`                                | `/api/whales` endpoint                                  |
+| `analyzeWhaleBehavior()`      | Calls `getTokenTransfers()`                                | `getWhaleBehaviorAnalysis()`                            |
+| `getRecentAlerts()`           | Processes data from `getRecentEvents()`                    | `/api/alerts` endpoint                                  |
+| `getRecentEvents()`           | Derived from whale movements                               | `/api/events` endpoint                                  |
+| `getWhalePortfolioAnalysis()` | `/ethereum/mainnet/account/getTokenBalancesByAccount`      | `/api/portfolio/:address` endpoint                      |
+
+### Enhanced Caching System
+
+The enhanced caching system now implements the following features:
+
+1. **Increased TTLs for High-Frequency Endpoints**
+
+   - Token Transfers: 30 minutes (up from 1 minute)
+   - Token Prices: 60 minutes (up from 5 minutes)
+   - General cache: 15 minutes default, 1 hour stale TTL
+
+2. **Stale-While-Revalidate Pattern**
+
+   - Returns stale data immediately while refreshing cache in background
+   - Prevents blocking on API requests when acceptable stale data is available
+
+3. **Advanced Rate Limit Handling**
+
+   - Exponential backoff (starting at 2 minutes, max 4 hours)
+   - Global rate limiting state to prevent multiple concurrent requests during cooldown
+   - Automatic fallback to stale data during rate limit periods
+
+4. **Cache Statistics and Monitoring**
+
+   - Tracks hits, misses, stale hits, and rate limit events
+   - Periodic logging of cache performance metrics
+   - Improved cache memory management (increased from 150 to 300 entries)
+
+5. **Background Refresh**
+   - Non-blocking cache updates for frequently accessed data
+   - Prevention of duplicate refreshes for the same cache key
+
+This enhanced caching system should significantly reduce 429 rate limit errors by better utilizing cached data and implementing proper backoff strategies.

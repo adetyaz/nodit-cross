@@ -49,40 +49,92 @@ let whaleMonitor = new WhaleMonitor({
   subscribedChatIds,
 });
 
+/**
+ * Standard response formatter for API endpoints
+ * @param {Array|Object} data - The data to return
+ * @returns {Object} Standardized response object with status and data
+ */
+function formatSuccessResponse(data) {
+  return { status: "ok", data: data };
+}
+
+/**
+ * Standard error response formatter for API endpoints
+ * @param {String} message - Error message
+ * @returns {Object} Standardized error response with status, message and empty data
+ */
+function formatErrorResponse(message) {
+  return {
+    status: "error",
+    message: message,
+    data: [],
+  };
+}
+
+/**
+ * Standard empty data response formatter
+ * @param {String} message - Message explaining why data is empty
+ * @returns {Object} Standardized empty data response
+ */
+function formatEmptyResponse(
+  message = "No data available. This may be due to rate limits, no recent activity, or data fetch errors."
+) {
+  return {
+    status: "nodata",
+    message: message,
+    data: [],
+  };
+}
+
 app.get("/api/whales", async (req, res) => {
   try {
     const whales = await whaleMonitor.getRecentWhaleMovements();
-    res.json(whales);
+    if (!Array.isArray(whales) || whales.length === 0) {
+      return res.json(formatEmptyResponse());
+    }
+    res.json(formatSuccessResponse(whales));
   } catch (error) {
     console.error("Error fetching whales:", error);
-    res.status(500).json({ error: "Failed to fetch whale movements" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch whale movements"));
   }
 });
 
 app.get("/api/alerts", async (req, res) => {
   try {
     const alerts = await whaleMonitor.getRecentAlerts();
-    res.json(alerts);
+    if (!Array.isArray(alerts) || alerts.length === 0) {
+      return res.json(formatEmptyResponse("No alerts found."));
+    }
+    res.json(formatSuccessResponse(alerts));
   } catch (error) {
     console.error("Error fetching alerts:", error);
-    res.status(500).json({ error: "Failed to fetch alerts" });
+    res.status(500).json(formatErrorResponse("Failed to fetch alerts"));
   }
 });
 
 app.get("/api/wallet", async (req, res) => {
   const { address, chains } = req.query;
   if (!address || typeof address !== "string") {
-    return res.status(400).json({ error: "Valid wallet address required" });
+    return res
+      .status(400)
+      .json(formatErrorResponse("Valid wallet address required"));
   }
   try {
     const walletData = await whaleMonitor.getWalletData(
       address,
       chains ? chains.split(",") : []
     );
-    res.json(walletData);
+    if (!walletData) {
+      return res.json(
+        formatEmptyResponse("No wallet data found for the provided address.")
+      );
+    }
+    res.json(formatSuccessResponse(walletData));
   } catch (error) {
     console.error("Error fetching wallet data:", error);
-    res.status(500).json({ error: "Failed to fetch wallet data" });
+    res.status(500).json(formatErrorResponse("Failed to fetch wallet data"));
   }
 });
 
@@ -94,10 +146,15 @@ app.post("/api/subscribe", async (req, res) => {
 app.get("/api/guardian-whales", async (req, res) => {
   try {
     const guardianWhales = await whaleMonitor.getGuardianWhales();
-    res.json(guardianWhales);
+    if (!Array.isArray(guardianWhales) || guardianWhales.length === 0) {
+      return res.json(formatEmptyResponse());
+    }
+    res.json(formatSuccessResponse(guardianWhales));
   } catch (error) {
     console.error("Error fetching guardian whales:", error);
-    res.status(500).json({ error: "Failed to fetch guardian whales" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch guardian whales"));
   }
 });
 
@@ -109,10 +166,17 @@ app.get("/api/whale-behavior/:address", async (req, res) => {
       address,
       timeframe
     );
-    res.json(behaviorAnalysis);
+    if (!behaviorAnalysis) {
+      return res.json(
+        formatEmptyResponse("No behavior analysis available for this address.")
+      );
+    }
+    res.json(formatSuccessResponse(behaviorAnalysis));
   } catch (error) {
     console.error("Error fetching whale behavior:", error);
-    res.status(500).json({ error: "Failed to fetch whale behavior analysis" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch whale behavior analysis"));
   }
 });
 
@@ -120,20 +184,30 @@ app.get("/api/ai-insights/:address", async (req, res) => {
   const { address } = req.params;
   try {
     const aiInsights = await whaleMonitor.getAIInsights(address);
-    res.json(aiInsights);
+    if (!aiInsights) {
+      return res.json(
+        formatEmptyResponse("No AI insights available for this address.")
+      );
+    }
+    res.json(formatSuccessResponse(aiInsights));
   } catch (error) {
     console.error("Error fetching AI insights:", error);
-    res.status(500).json({ error: "Failed to fetch AI insights" });
+    res.status(500).json(formatErrorResponse("Failed to fetch AI insights"));
   }
 });
 
 app.get("/api/whale-strategies", async (req, res) => {
   try {
     const strategies = await whaleMonitor.getGuardianWhaleStrategies();
-    res.json(strategies);
+    if (!Array.isArray(strategies) || strategies.length === 0) {
+      return res.json(formatEmptyResponse("No whale strategies found."));
+    }
+    res.json(formatSuccessResponse(strategies));
   } catch (error) {
     console.error("Error fetching whale strategies:", error);
-    res.status(500).json({ error: "Failed to fetch whale strategies" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch whale strategies"));
   }
 });
 
@@ -141,20 +215,34 @@ app.get("/api/whale-portfolio/:address", async (req, res) => {
   const { address } = req.params;
   try {
     const portfolio = await whaleMonitor.getWhalePortfolioAnalysis(address);
-    res.json(portfolio);
+    if (!portfolio) {
+      return res.json(
+        formatEmptyResponse("No portfolio data available for this address.")
+      );
+    }
+    res.json(formatSuccessResponse(portfolio));
   } catch (error) {
     console.error("Error fetching whale portfolio:", error);
-    res.status(500).json({ error: "Failed to fetch whale portfolio analysis" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch whale portfolio analysis"));
   }
 });
 
 app.get("/api/whale-influence-network", async (req, res) => {
   try {
     const network = await whaleMonitor.getWhaleInfluenceNetwork();
-    res.json(network);
+    if (!network || (Array.isArray(network) && network.length === 0)) {
+      return res.json(
+        formatEmptyResponse("No influence network data available.")
+      );
+    }
+    res.json(formatSuccessResponse(network));
   } catch (error) {
     console.error("Error fetching whale influence network:", error);
-    res.status(500).json({ error: "Failed to fetch whale influence network" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch whale influence network"));
   }
 });
 
@@ -162,10 +250,19 @@ app.get("/api/market-impact", async (req, res) => {
   const { timeframe = "24h" } = req.query;
   try {
     const marketImpact = await whaleMonitor.getMarketImpactAnalysis(timeframe);
-    res.json(marketImpact);
+    if (!marketImpact) {
+      return res.json(
+        formatEmptyResponse(
+          "No market impact data available for the specified timeframe."
+        )
+      );
+    }
+    res.json(formatSuccessResponse(marketImpact));
   } catch (error) {
     console.error("Error fetching market impact:", error);
-    res.status(500).json({ error: "Failed to fetch market impact analysis" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch market impact analysis"));
   }
 });
 
@@ -176,12 +273,17 @@ app.get("/api/guardian-leaderboard", async (req, res) => {
       metric,
       parseInt(limit)
     );
-    res.json(leaderboard);
+    if (!Array.isArray(leaderboard) || leaderboard.length === 0) {
+      return res.json(
+        formatEmptyResponse("No guardian whale leaderboard data available.")
+      );
+    }
+    res.json(formatSuccessResponse(leaderboard));
   } catch (error) {
     console.error("Error fetching guardian leaderboard:", error);
     res
       .status(500)
-      .json({ error: "Failed to fetch guardian whale leaderboard" });
+      .json(formatErrorResponse("Failed to fetch guardian whale leaderboard"));
   }
 });
 
@@ -189,10 +291,15 @@ app.get("/api/guardian-leaderboard", async (req, res) => {
 app.get("/api/real-time-events", async (req, res) => {
   try {
     const events = await whaleMonitor.getRecentEvents();
-    res.json(events);
+    if (!Array.isArray(events) || events.length === 0) {
+      return res.json(formatEmptyResponse());
+    }
+    res.json(formatSuccessResponse(events));
   } catch (error) {
     console.error("Error fetching real-time events:", error);
-    res.status(500).json({ error: "Failed to fetch real-time events" });
+    res
+      .status(500)
+      .json(formatErrorResponse("Failed to fetch real-time events"));
   }
 });
 

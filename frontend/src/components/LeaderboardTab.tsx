@@ -44,58 +44,83 @@ export const LeaderboardTab = ({ leaderboard, onWhaleSelect }: Props) => {
                 <th className="pb-3 text-gray-400">Success Rate</th>
                 <th className="pb-3 text-gray-400">Badge</th>
               </tr>
-            </thead>
+            </thead>{' '}
             <tbody>
-              {leaderboard.map((whale, index) => {
-                const badge = getGuardianScoreBadge(whale.guardianScore)
-                return (
-                  <tr
-                    key={whale.address + '-' + index}
-                    className="border-b border-gray-800 hover:bg-gray-700/30"
-                  >
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        {index === 0 && (
-                          <Crown className="w-4 h-4 text-yellow-400" />
-                        )}
-                        {index === 1 && (
-                          <Award className="w-4 h-4 text-gray-300" />
-                        )}
-                        {index === 2 && (
-                          <Star className="w-4 h-4 text-orange-400" />
-                        )}
-                        <span className="font-semibold">#{index + 1}</span>
-                      </div>
-                    </td>
-                    <td className="py-3">
-                      <button
+              {Array.isArray(leaderboard) && leaderboard.length > 0 ? (
+                leaderboard
+                  .map((whale, index) => {
+                    if (!whale.address) return null
+                    const badge = getGuardianScoreBadge(
+                      whale.guardianScore || 0,
+                    )
+                    return (
+                      <tr
+                        key={whale.address + '-' + index}
+                        className="border-b border-gray-800 hover:bg-gray-700/30 cursor-pointer"
                         onClick={() => onWhaleSelect(whale)}
-                        className="font-mono text-blue-400 hover:text-blue-300 transition-colors"
                       >
-                        {whale.address.slice(0, 6)}...{whale.address.slice(-4)}
-                      </button>
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={`font-bold ${getGuardianScoreColor(whale.guardianScore)}`}
-                      >
-                        {whale.guardianScore}
-                      </span>
-                    </td>
-                    <td className="py-3 text-green-400 font-semibold">
-                      ${(whale.totalVolume / 1000000).toFixed(1)}M
-                    </td>
-                    <td className="py-3 text-blue-400">{whale.successRate}%</td>
-                    <td className="py-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${badge.color} text-white`}
-                      >
-                        {badge.text}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            {index === 0 && (
+                              <Crown className="w-4 h-4 text-yellow-400" />
+                            )}
+                            {index === 1 && (
+                              <Award className="w-4 h-4 text-gray-300" />
+                            )}
+                            {index === 2 && (
+                              <Star className="w-4 h-4 text-orange-400" />
+                            )}
+                            <span className="font-bold text-lg">
+                              #{index + 1}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3">
+                          <span className="font-mono text-blue-400">
+                            {whale.address.slice(0, 6)}...
+                            {whale.address.slice(-4)}
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={`font-bold ${getGuardianScoreColor(whale.guardianScore || 0)}`}
+                          >
+                            {whale.guardianScore || 0}/100
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <span className="text-green-400 font-semibold">
+                            ${((whale.totalVolume || 0) / 1000000).toFixed(1)}M
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <span className="text-blue-400">
+                            {((whale.successRate || 0) * 100).toFixed(1)}%
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${badge.color} text-white`}
+                          >
+                            {badge.text}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
+                  .filter(Boolean)
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-400">
+                    <Crown className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No Guardian Whales in leaderboard yet.</p>
+                    <p className="text-sm mt-2">
+                      The leaderboard will populate as Guardian Whales are
+                      identified and ranked.
+                    </p>
+                  </td>
+                </tr>
+              )}{' '}
             </tbody>
           </table>
         </div>

@@ -43,18 +43,29 @@ const WhaleTrackerDashboard = () => {
     Array<GuardianWhale>
   >([])
   const [realTimeEvents, setRealTimeEvents] = useState<Array<RealTimeEvent>>([])
-  const [priceImpactData, setPriceImpactData] = useState<Array<PriceImpact>>([])
-
-  // API hooks
+  const [priceImpactData, setPriceImpactData] = useState<Array<PriceImpact>>([]) // API hooks with TanStack Query
   const {
-    fetchWhaleData,
-    fetchGuardianWhales,
-    fetchWhaleBehavior,
-    fetchAIInsights,
-    fetchWhaleStrategies,
-    fetchGuardianLeaderboard,
-    fetchRealTimeEvents,
+    useWhaleData,
+    useGuardianWhales,
+    useWhaleBehavior,
+    useAIInsights,
+    useWhaleStrategies,
+    useGuardianLeaderboard,
+    useRealTimeEvents,
+    useMarketImpact,
+    prefetchCriticalData,
   } = useWhaleAPI()
+
+  // Query instances
+  const { data: whaleData, isLoading: loadingWhales } = useWhaleData()
+  const { data: guardianData, isLoading: loadingGuardians } =
+    useGuardianWhales()
+  const { data: strategiesData, isLoading: loadingStrategies } =
+    useWhaleStrategies()
+  const { data: leaderboardData, isLoading: loadingLeaderboard } =
+    useGuardianLeaderboard()
+  const { data: realTimeData, isLoading: loadingRealTime } = useRealTimeEvents()
+  const { data: impactData, isLoading: loadingImpact } = useMarketImpact('24h')
 
   // Tab configuration
   const tabs = [
@@ -64,80 +75,123 @@ const WhaleTrackerDashboard = () => {
     { id: 'leaderboard' as TabId, label: 'Leaderboard', icon: Crown },
     { id: 'realtime' as TabId, label: 'Real-time Events', icon: Zap },
   ]
+  // Data fetching with TanStack Query
+  const loadInitialData = useCallback(() => {
+    // Prefetch critical data to ensure it's cached
+    prefetchCriticalData()
+      .then(() => {
+        console.log('Critical data prefetched successfully')
+      })
+      .catch((err) => {
+        console.error('Error prefetching data:', err)
+      })
+  }, [prefetchCriticalData])
 
-  // Data fetching
-  const loadInitialData = useCallback(async () => {
-    setLoading(true)
-    setError('')
+  // Effect to update state when query data changes
+  useEffect(() => {
+    if (whaleData) {
+      setWhaleTransactions(whaleData)
+    }
+  }, [whaleData])
 
-    try {
-      const [transactions, guardians, strategies, leaderboard, events] =
-        await Promise.all([
-          fetchWhaleData().catch(() => []),
-          fetchGuardianWhales().catch(() => []),
-          fetchWhaleStrategies().catch(() => []),
-          fetchGuardianLeaderboard().catch(() => []),
-          fetchRealTimeEvents().catch(() => []),
-        ])
+  useEffect(() => {
+    if (guardianData) {
+      setGuardianWhales(Array.isArray(guardianData) ? guardianData : [])
+    }
+  }, [guardianData])
 
-      setWhaleTransactions(transactions)
-      setGuardianWhales(guardians)
-      setWhaleStrategies(strategies)
-      setGuardianLeaderboard(leaderboard)
-      setRealTimeEvents(events)
+  useEffect(() => {
+    if (strategiesData) {
+      setWhaleStrategies(strategiesData)
+    }
+  }, [strategiesData])
 
-      // Mock price impact data
-      setPriceImpactData([
-        { symbol: 'ETH', impact: -2.3, volume: 1500000 },
-        { symbol: 'USDT', impact: 0.1, volume: 5000000 },
-        { symbol: 'WBTC', impact: -1.8, volume: 800000 },
-      ])
-    } catch (err) {
-      console.error('Error loading data:', err)
-      setError('Failed to load dashboard data')
-      toast.error('Failed to load dashboard data')
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (leaderboardData) {
+      setGuardianLeaderboard(leaderboardData)
+    }
+  }, [leaderboardData])
+
+  useEffect(() => {
+    if (realTimeData) {
+      setRealTimeEvents(realTimeData)
+    }
+  }, [realTimeData])
+
+  useEffect(() => {
+    if (impactData) {
+      setPriceImpactData(Array.isArray(impactData) ? impactData : [])
+    }
+  }, [impactData])
+
+  // Set loading state based on query loading states
+  useEffect(() => {
+    const isLoading =
+      loadingWhales ||
+      loadingGuardians ||
+      loadingStrategies ||
+      loadingLeaderboard ||
+      loadingRealTime ||
+      loadingImpact
+
+    setLoading(isLoading)
+
+    if (!isLoading) {
+      // If any data is missing, set an error
+      const hasData =
+        !!whaleData?.length ||
+        !!guardianData?.length ||
+        !!strategiesData?.length
+
+      if (!hasData) {
+        setError('No data available')
+      } else {
+        setError('')
+      }
     }
   }, [
-    fetchWhaleData,
-    fetchGuardianWhales,
-    fetchWhaleStrategies,
-    fetchGuardianLeaderboard,
-    fetchRealTimeEvents,
+    loadingWhales,
+    loadingGuardians,
+    loadingStrategies,
+    loadingLeaderboard,
+    loadingRealTime,
+    loadingImpact,
+    whaleData,
+    guardianData,
+    strategiesData,
   ])
-
-  const handleWhaleSelect = useCallback(
-    async (whale: GuardianWhale) => {
-      setSelectedWhale(whale)
-
-      try {
-        const [behavior, insights] = await Promise.all([
-          fetchWhaleBehavior(whale.address, '24h'),
-          fetchAIInsights(whale.address),
-        ])
-
-        setWhaleBehavior(behavior)
-        setAiInsights(insights)
-      } catch (err) {
-        console.error('Error fetching whale details:', err)
-        toast.error('Failed to load whale details')
-      }
-    },
-    [fetchWhaleBehavior, fetchAIInsights],
+  // Use TanStack Query hooks for selected whale data
+  const { data: behaviorData } = useWhaleBehavior(
+    selectedWhale?.address || '',
+    '24h',
   )
 
+  const { data: insightsData } = useAIInsights(selectedWhale?.address || '')
+
+  // Update state when query data changes
+  useEffect(() => {
+    if (behaviorData) {
+      setWhaleBehavior(behaviorData)
+    }
+  }, [behaviorData])
+
+  useEffect(() => {
+    if (insightsData) {
+      setAiInsights(insightsData)
+    }
+  }, [insightsData])
+
+  const handleWhaleSelect = useCallback((whale: GuardianWhale) => {
+    setSelectedWhale(whale)
+    // The TanStack Query hooks will automatically refetch the data
+    // when selectedWhale changes due to the enabled: !!address condition
+  }, [])
   // Effects
   useEffect(() => {
     loadInitialData()
-
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchRealTimeEvents().then(setRealTimeEvents).catch(console.error)
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [loadInitialData, fetchRealTimeEvents])
+    // Note: We don't need to set up an interval as TanStack Query's
+    // useRealTimeEvents hook already has refetchInterval: 15000 configured
+  }, [loadInitialData])
 
   // Render tab content
   const renderTabContent = () => {

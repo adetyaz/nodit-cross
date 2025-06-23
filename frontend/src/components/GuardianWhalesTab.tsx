@@ -41,72 +41,88 @@ export const GuardianWhalesTab = ({
         <p className="text-gray-300 mb-6">
           Elite whales with high Guardian Scores based on behavioral analysis
           and market impact
-        </p>
-
+        </p>{' '}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from(new Set(guardianWhales.map(w => w.address))).map((address, idx) => {
-            const whale = guardianWhales.find(w => w.address === address)
-            if (!whale) return null
-            const badge = getGuardianScoreBadge(whale.guardianScore)
-            return (
-              <div
-                key={whale.address + '-' + idx}
-                className="bg-gray-700/50 rounded-lg p-4 hover:bg-gray-700 transition-all cursor-pointer border-l-4 border-blue-400"
-                onClick={() => onWhaleSelect(whale)}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-yellow-400" />
-                    <span className="font-mono text-sm">
-                      {whale.address.slice(0, 6)}...{whale.address.slice(-4)}
+          {Array.isArray(guardianWhales) && guardianWhales.length > 0 ? (
+            Array.from(
+              new Set(
+                guardianWhales.filter((w) => w.address).map((w) => w.address),
+              ),
+            ).map((address, idx) => {
+              const whale = guardianWhales.find((w) => w.address === address)
+              if (!whale || !whale.address) return null
+              const badge = getGuardianScoreBadge(whale.guardianScore || 0)
+              return (
+                <div
+                  key={whale.address + '-' + idx}
+                  className="bg-gray-700/50 rounded-lg p-4 hover:bg-gray-700 transition-all cursor-pointer border-l-4 border-blue-400"
+                  onClick={() => onWhaleSelect(whale)}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-yellow-400" />
+                      <span className="font-mono text-sm">
+                        {whale.address.slice(0, 6)}...{whale.address.slice(-4)}
+                      </span>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${badge.color} text-white`}
+                    >
+                      {badge.text}
                     </span>
                   </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${badge.color} text-white`}
-                  >
-                    {badge.text}
-                  </span>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Guardian Score</span>
-                    <span
-                      className={`font-bold ${getGuardianScoreColor(whale.guardianScore)}`}
-                    >
-                      {whale.guardianScore}/100
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Total Volume</span>
-                    <span className="text-green-400 font-semibold">
-                      ${(whale.totalVolume / 1000000).toFixed(1)}M
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Strategies</span>
-                    <span className="text-blue-400">
-                      {whale.strategies.length || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Risk Level</span>
-                    <span
-                      className={`font-semibold ${
-                        whale.riskLevel === 'low'
-                          ? 'text-green-400'
-                          : whale.riskLevel === 'medium'
-                            ? 'text-yellow-400'
-                            : 'text-red-400'
-                      }`}
-                    >
-                      {whale.riskLevel.toUpperCase()}
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Guardian Score</span>
+                      <span
+                        className={`font-bold ${getGuardianScoreColor(whale.guardianScore || 0)}`}
+                      >
+                        {whale.guardianScore || 0}/100
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total Volume</span>
+                      <span className="text-green-400 font-semibold">
+                        ${((whale.totalVolume || 0) / 1000000).toFixed(1)}M
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Strategies</span>
+                      <span className="text-blue-400">
+                        {Array.isArray(whale.strategies)
+                          ? whale.strategies.length
+                          : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Risk Level</span>
+                      <span
+                        className={`font-semibold ${
+                          whale.riskLevel === 'low'
+                            ? 'text-green-400'
+                            : whale.riskLevel === 'medium'
+                              ? 'text-yellow-400'
+                              : 'text-red-400'
+                        }`}
+                      >
+                        {whale.riskLevel.toUpperCase()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          ) : (
+            <div className="col-span-full text-center py-8 text-gray-400">
+              <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No Guardian Whales found yet.</p>
+              <p className="text-sm mt-2">
+                Guardian Whales will appear here when addresses with high
+                activity and sophisticated trading patterns are detected.
+              </p>
+            </div>
+          )}
         </div>
       </div>
       {/* Selected Whale Details */}
