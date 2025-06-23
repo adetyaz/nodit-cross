@@ -139,9 +139,9 @@ export const DashboardOverview = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {whaleTransactions.slice(0, 20).map((tx) => (
+                  {whaleTransactions.slice(0, 20).map((tx, index) => (
                     <tr
-                      key={tx.id}
+                      key={index + 1}
                       className="border-b border-gray-800 hover:bg-gray-700/30 transition-colors"
                     >
                       <td className="py-3">

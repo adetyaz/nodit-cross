@@ -1953,6 +1953,24 @@ class WhaleMonitor {
 
   // --- Guardian Whale API Methods ---
   async getGuardianWhales() {
+    // Analyze all recent whale movements and populate guardianWhales
+    const addresses = new Set(
+      this.recentWhaleMovements
+        .map((m) => m.from?.toLowerCase())
+        .filter(Boolean)
+    );
+    for (const address of addresses) {
+      if (!this.guardianWhales.has(address)) {
+        try {
+          await this.analyzeWhaleBehavior(address, "ethereum", "mainnet");
+        } catch (err) {
+          console.error(
+            `GuardianWhales auto-analysis failed for ${address}:`,
+            err
+          );
+        }
+      }
+    }
     // Return all guardian whale profiles as an array
     return Array.from(this.guardianWhales.values());
   }
