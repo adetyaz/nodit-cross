@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-const API_BASE_URL = 'http://localhost:4000'
+// Use the deployed backend URL
+const API_BASE_URL = 'https://nodit-backend.onrender.com'
 
 // Cache configuration for different API endpoints
 const CACHE_CONFIG = {

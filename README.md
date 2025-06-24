@@ -2,6 +2,12 @@
 
 This project tracks and visualizes whale movements and wallet activities across multiple chains (Ethereum, Polygon, XRPL) using Nodit APIs. It features comprehensive monitoring tools, alert systems, and inheritance management solutions.
 
+## Deployment
+
+The application is deployed on Render:
+- Frontend: [https://whale-tracker-frontend.onrender.com](https://whale-tracker-frontend.onrender.com)
+- Backend: [https://nodit-backend.onrender.com](https://nodit-backend.onrender.com)
+
 ## Core Features
 
 ### Whale Tracking

@@ -9,10 +9,22 @@ services:
     startCommand: npm start
     envVars:
       - key: NODE_ENV
-        value: production
-      - key: NODIT_API_KEY
+        value: production      - key: NODIT_API_KEY
         value: nodit-demo
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: USE_MOCK_DATA
-        value: true
+        value: false
+        
+  - type: web
+    name: whale-tracker-frontend
+    env: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
